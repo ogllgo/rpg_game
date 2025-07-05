@@ -1,10 +1,9 @@
 use crate::{ block::BlockType, Block, BlockName };
 
-pub fn block_dirt(x: i32, y: i32, z: i32) -> Block {
+pub fn block_dirt(x: i32, y: i32) -> Block {
     Block::new(
         x,
         y,
-        z,
         (139, 69, 19),
         BlockName::Dirt,
         true,
@@ -14,11 +13,10 @@ pub fn block_dirt(x: i32, y: i32, z: i32) -> Block {
     )
 }
 
-pub fn block_air(x: i32, y: i32, z: i32) -> Block {
+pub fn block_air(x: i32, y: i32) -> Block {
     Block::new(
         x,
         y,
-        z,
         (135, 206, 235),
         BlockName::Air,
         false,
@@ -28,11 +26,10 @@ pub fn block_air(x: i32, y: i32, z: i32) -> Block {
     )
 }
 
-pub fn block_void(x: i32, y: i32, z: i32) -> Block {
+pub fn block_void(x: i32, y: i32) -> Block {
     Block::new(
         x,
         y,
-        z,
         (0, 0, 0),
         BlockName::Void,
         false,
@@ -41,11 +38,10 @@ pub fn block_void(x: i32, y: i32, z: i32) -> Block {
         0,
     )
 }
-pub fn block_stone(x: i32, y: i32, z: i32) -> Block {
+pub fn block_stone(x: i32, y: i32) -> Block {
     Block::new(
         x,
         y,
-        z,
         (163, 140, 132),
         BlockName::Void,
         true,

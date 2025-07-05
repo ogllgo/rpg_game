@@ -2,11 +2,7 @@ use std::collections::HashMap;
 
 use crate::{blocks::*, Block};
 
-type TilePos = (i32, i32, i32);
-
-struct Chunk {
-    tiles: HashMap<TilePos, Block>,
-}
+type TilePos = (i32, i32);
 
 pub struct World {
     tiles: HashMap<TilePos, Block>,
@@ -19,15 +15,15 @@ impl World {
         }
     }
 
-    fn generate_tile(&self, x: i32, y: i32, z: i32) -> Block {
+    fn generate_tile(&self, x: i32, y: i32) -> Block {
         if y > 40 {
-            if y == 41 && (x + z) % 2 == 0 {
-                block_stone(x, y, z)
+            if y == 41 && x % 2 == 0 {
+                block_stone(x, y)
             } else {
-                block_dirt(x, y, z)
+                block_dirt(x, y)
             }
         } else {
-            block_air(x, y, z)
+            block_air(x, y)
         }
     }
 
@@ -40,9 +36,9 @@ impl World {
 
         for y in (center_y - half_height)..=(center_y + half_height) {
             for x in (center_x - half_width)..=(center_x + half_width) {
-                let pos = (x, y, z);
+                let pos = (x, y);
                 if !self.tiles.contains_key(&pos) {
-                    let new_block = self.generate_tile(x, y, z);
+                    let new_block = self.generate_tile(x, y);
                     self.tiles.insert(pos, new_block);
                 }
             }
@@ -71,8 +67,8 @@ impl World {
         self.tiles.get(&(x, y))
     }
 
-    pub fn hit_block(&mut self, x: i32, y: i32, z: i32, damage: f32, damage_level: i32) {
-        let pos = (x, y, z);
+    pub fn hit_block(&mut self, x: i32, y: i32, damage: f32, damage_level: i32) {
+        let pos = (x, y);
         if let Some(block) = self.tiles.get_mut(&pos) {
             if block.can_be_hit() {
                 let mut damage = damage;
@@ -82,12 +78,12 @@ impl World {
                 block.health -= damage;
             }
             if block.health <= 0.0 {
-                self.tiles.insert(pos, block_air(x, y, z));
+                self.tiles.insert(pos, block_air(x, y));
                 // @IMPLEMENT: item drops
             }
         }
     }
     pub fn remove_block(&mut self, x: i32, y: i32) {
-        self.tiles.insert((x, y), block_air(x, y, z));
+        self.tiles.insert((x, y), block_air(x, y));
     }
 }

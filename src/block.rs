@@ -20,7 +20,6 @@ pub enum BlockType {
 pub struct Block {
     pub x: i32,
     pub y: i32,
-    pub z: i32,
     pub color: (u8, u8, u8),
     pub block_type: BlockName,
     pub can_collide: bool,
@@ -43,11 +42,10 @@ impl Block {
             scale,
         )).unwrap();
     }
-    pub fn new(x: i32, y: i32, z: i32, color: (u8, u8, u8), block_type: BlockName, can_collide: bool, types: Vec<BlockType>, resist: i32, max_health: i32) -> Self {
+    pub fn new(x: i32, y: i32, color: (u8, u8, u8), block_type: BlockName, can_collide: bool, types: Vec<BlockType>, resist: i32, max_health: i32) -> Self {
         Self {
             x,
             y,
-            z,
             color,
             block_type,
             can_collide,
