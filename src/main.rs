@@ -1,7 +1,6 @@
-use std::collections::HashSet;
-use std::time::{ Duration, Instant };
+use rpg_game::Block;
 use rpg_game::utils::Direction;
-use rpg_game::{ Player, world::World };
+use rpg_game::{Player, world::World};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -9,6 +8,8 @@ use sdl2::rect::{FRect, Rect};
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::ttf::Font;
 use sdl2::video::Window;
+use std::collections::HashSet;
+use std::time::{Duration, Instant};
 
 fn render_text_to_canvas<T>(
     canvas: &mut Canvas<Window>,
@@ -18,8 +19,13 @@ fn render_text_to_canvas<T>(
     x: i32,
     y: i32,
 ) -> Result<(), String> {
-    let surface = font.render(text).blended(Color::RGBA(0, 0, 0, 255)).unwrap();
-    let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
+    let surface = font
+        .render(text)
+        .blended(Color::RGBA(0, 0, 0, 255))
+        .unwrap();
+    let texture = texture_creator
+        .create_texture_from_surface(&surface)
+        .unwrap();
     let query = texture.query();
     let target = Rect::new(x, y, query.width, query.height);
     canvas.copy(&texture, None, Some(target))?;
@@ -44,7 +50,8 @@ pub fn main() {
     let window_width = 800.0;
     let window_height = 600.0;
 
-    let window = video_subsystem.window("window", window_width as u32, window_height as u32)
+    let window = video_subsystem
+        .window("window", window_width as u32, window_height as u32)
         .position_centered()
         .build()
         .unwrap();
@@ -54,7 +61,7 @@ pub fn main() {
     let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut world = World::new();
+    let mut world = World::new(6589);
 
     // Scale based on camera and window size
     let scale_x: f32 = window_width / camera.w;
@@ -73,20 +80,28 @@ pub fn main() {
 
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit { .. } |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
 
-                Event::KeyDown { keycode: Some(key), .. } => {
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => {
                     pressed_keys.insert(key);
                 }
-                Event::KeyUp { keycode: Some(key), .. } => {
+                Event::KeyUp {
+                    keycode: Some(key), ..
+                } => {
                     pressed_keys.remove(&key);
                 }
                 _ => {}
             }
         }
 
-        let (mouse_x, mouse_y) = (event_pump.mouse_state().x(), event_pump.mouse_state().y());
+        let (mouse_x, mouse_y) =
+            (event_pump.mouse_state().x(), event_pump.mouse_state().y());
         let mouse_world_x = camera.x + (mouse_x as f32) / scale;
         let mouse_world_y = camera.y + (mouse_y as f32) / scale;
         player.look_at(mouse_world_x, mouse_world_y);
@@ -103,25 +118,47 @@ pub fn main() {
                 Direction::None => (center_x, center_y),
             };
 
-            world.hit_block(target_x.floor() as i32, target_y.floor() as i32, player.mining_speed as f32 * dt, 1);
+            world.hit_block(
+                target_x.floor() as i32,
+                target_y.floor() as i32,
+                player.mining_speed as f32 * dt,
+                1,
+            );
         }
-
+        let blocks: Vec<Block> = world
+            .get_chunks_around_point(
+                player.x,
+                player.y,
+                camera.w as i32,
+                camera.h as i32,
+            )
+            .iter()
+            .flat_map(|c| c.flatten())
+            .collect();
         if pressed_keys.contains(&Keycode::Space) {
-            println!("jump..");
-            player.try_jump(&world.get_blocks_around_player(player.x, player.y, camera.w as i32, camera.h as i32));
+            player.try_jump(&blocks);
         }
-        if pressed_keys.contains(&Keycode::Left) || pressed_keys.contains(&Keycode::A) {
+        if pressed_keys.contains(&Keycode::Left)
+            || pressed_keys.contains(&Keycode::A)
+        {
             player.try_move(Direction::Left, dt);
-        } else if pressed_keys.contains(&Keycode::Right) || pressed_keys.contains(&Keycode::D) {
+        } else if pressed_keys.contains(&Keycode::Right)
+            || pressed_keys.contains(&Keycode::D)
+        {
             player.try_move(Direction::Right, dt);
         } else {
             player.apply_friction(dt);
         }
 
         player.apply_gravity(dt);
-        player.move_step(&world.get_blocks_around_player(player.x, player.y, camera.w as i32, camera.h as i32), dt);
+        player.move_step(&blocks, dt);
 
-        world.update_around_player(player.x, player.y);
+        world.update_around_point(
+            player.x,
+            player.y,
+            camera_width * 2.0,
+            camera_height * 2.0,
+        );
 
         // Update camera centered on player
         camera.x = player.x + Player::WIDTH / 2.0 - camera.w / 2.0;
@@ -132,13 +169,23 @@ pub fn main() {
         canvas.set_draw_color((0, 0, 0));
         canvas.clear();
 
-        for block in world.get_blocks_around_player(player.x, player.y, camera.w as i32, camera.h as i32).iter() {
+        for block in blocks {
             block.render(&mut canvas, &camera, scale);
         }
 
         player.render(&mut canvas, &camera, scale);
-        let font = ttf_context.load_font("/usr/share/fonts/TTF/Arial.TTF", 24).unwrap();
-        render_text_to_canvas(&mut canvas, &texture_creator, &font, "I love SDL!", 0, 0).unwrap();
+        let font = ttf_context
+            .load_font("/usr/share/fonts/TTF/Arial.TTF", 24)
+            .unwrap();
+        render_text_to_canvas(
+            &mut canvas,
+            &texture_creator,
+            &font,
+            "I love SDL!",
+            0,
+            0,
+        )
+        .unwrap();
         canvas.present();
 
         let elapsed = Instant::now() - now;

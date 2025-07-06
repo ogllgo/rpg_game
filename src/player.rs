@@ -1,7 +1,7 @@
-use sdl2::{render::{Canvas}, video::Window};
 use sdl2::rect::FRect;
+use sdl2::{render::Canvas, video::Window};
 
-use crate::{utils::Direction, Block};
+use crate::{Block, utils::Direction};
 pub const GRAVITY_FORCE: f32 = 30.0;
 pub struct Player {
     pub x: f32,
@@ -10,12 +10,15 @@ pub struct Player {
     pub velocity_x: f32,
     pub velocity_y: f32,
     pub mining_speed: i32,
-    
 }
 
 fn aabb_collision(
-    px: f32, py: f32, pw: f32, ph: f32,
-    bx: i32, by: i32
+    px: f32,
+    py: f32,
+    pw: f32,
+    ph: f32,
+    bx: i32,
+    by: i32,
 ) -> bool {
     let bw = 1.0;
     let bh = 1.0;
@@ -33,7 +36,10 @@ fn aabb_collision(
     let b_bottom = by as f32 + bh;
 
     // Check for overlap on x and y axes
-    !(p_right <= b_left || p_left >= b_right || p_bottom <= b_top || p_top >= b_bottom)
+    !(p_right <= b_left
+        || p_left >= b_right
+        || p_bottom <= b_top
+        || p_top >= b_bottom)
 }
 
 impl Player {
@@ -48,11 +54,12 @@ impl Player {
             look_dir: Direction::None,
             velocity_x: 0.0,
             velocity_y: 0.0,
-            mining_speed: 6000,
+            mining_speed: 100,
         }
     }
     pub fn apply_gravity(&mut self, dt: f32) {
-        self.velocity_y = (self.velocity_y + GRAVITY_FORCE * dt).min(Self::TERMINAL_VELOCITY);
+        self.velocity_y =
+            (self.velocity_y + GRAVITY_FORCE * dt).min(Self::TERMINAL_VELOCITY);
     }
 
     pub fn move_step(&mut self, blocks: &Vec<Block>, dt: f32) {
@@ -71,8 +78,14 @@ impl Player {
         // Collision detection closure
         let collides = |x: f32, y: f32| -> bool {
             blocks.iter().any(|block| {
-                aabb_collision(x, y, Self::WIDTH, Self::HEIGHT, block.x as i32, block.y as i32)
-                    && block.can_collide
+                aabb_collision(
+                    x,
+                    y,
+                    Self::WIDTH,
+                    Self::HEIGHT,
+                    block.x as i32,
+                    block.y as i32,
+                ) && block.can_collide
             })
         };
 
@@ -128,17 +141,26 @@ impl Player {
             }
         }
     }
-    pub fn render(&self, canvas: &mut Canvas<Window>, camera: &FRect, scale: f32) {
+    pub fn render(
+        &self,
+        canvas: &mut Canvas<Window>,
+        camera: &FRect,
+        scale: f32,
+    ) {
         canvas.set_draw_color((244, 194, 157));
 
         let screen_x = (self.x - camera.x) * scale;
         let screen_y = (self.y - camera.y) * scale;
 
-        canvas.fill_frect(FRect::new(screen_x,
-            screen_y,
-            Player::WIDTH * scale,
-            Player::HEIGHT * scale)).unwrap();
-        
+        canvas
+            .fill_frect(FRect::new(
+                screen_x,
+                screen_y,
+                Player::WIDTH * scale,
+                Player::HEIGHT * scale,
+            ))
+            .unwrap();
+
         // Calculate the center of the player
         let player_center_x = self.x + Self::WIDTH / 2.0;
         let player_center_y = self.y + Self::HEIGHT / 2.0;
@@ -162,12 +184,14 @@ impl Player {
         // Draw red dot (small rectangle, e.g., 6x6 pixels)
         canvas.set_draw_color((255, 0, 0));
         let dot_size = 6.0;
-        canvas.fill_frect(FRect::new(
-            dot_screen_x - dot_size / 2.0,
-            dot_screen_y - dot_size / 2.0,
-            dot_size,
-            dot_size,
-        )).unwrap();
+        canvas
+            .fill_frect(FRect::new(
+                dot_screen_x - dot_size / 2.0,
+                dot_screen_y - dot_size / 2.0,
+                dot_size,
+                dot_size,
+            ))
+            .unwrap();
     }
     fn is_on_ground(&self, blocks: &Vec<Block>) -> bool {
         let feet_y = self.y + Self::HEIGHT;
@@ -182,7 +206,6 @@ impl Player {
     }
     pub fn try_jump(&mut self, blocks: &Vec<Block>) {
         if self.is_on_ground(blocks) {
-            println!("on ground");
             self.velocity_y = -20.0; // jump impulse, tune this value to your liking
         }
     }
@@ -197,13 +220,13 @@ impl Player {
                 if self.velocity_x < -max_speed {
                     self.velocity_x = -max_speed;
                 }
-            },
+            }
             Direction::Right => {
                 self.velocity_x += acceleration * dt;
                 if self.velocity_x > max_speed {
                     self.velocity_x = max_speed;
                 }
-            },
+            }
             _ => println!("When trying to move, direction not horizontal"),
         }
     }
@@ -232,7 +255,7 @@ impl Player {
             self.x -= width;
         }
     }
-        pub fn look_at(&mut self, target_x: f32, target_y: f32) {
+    pub fn look_at(&mut self, target_x: f32, target_y: f32) {
         let px = self.x + Self::WIDTH / 2.0;
         let py = self.y + Self::HEIGHT / 2.0;
 

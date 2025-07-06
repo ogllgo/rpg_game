@@ -1,5 +1,10 @@
-use crate::{ block::BlockType, Block, BlockName };
-
+use crate::{Block, BlockName, block::BlockFlag};
+// @TODO: make this use textures instead of solid colors
+// maybe also have LOD textures, as well as quality scales
+// or we could just do some dirty algorithms on first launch to write LODs and downscaled textures to a directory
+// so that all we have to do is link to some highdef texture (128x128?) and it does the rest
+// but that would probably require something like `pub fn get_all_textures` that returns each `block_*`.texture_path
+// and definitely texture caching. we can't have, like, 100 I/O operations a frame
 pub fn block_dirt(x: i32, y: i32) -> Block {
     Block::new(
         x,
@@ -7,8 +12,8 @@ pub fn block_dirt(x: i32, y: i32) -> Block {
         (139, 69, 19),
         BlockName::Dirt,
         true,
-        vec![BlockType::Dirt],
-        0, // dirt is soft
+        [Some(BlockFlag::Dig), None, None, None, None, None],
+        0,  // dirt is soft
         50, // so it takes litle time
     )
 }
@@ -20,7 +25,7 @@ pub fn block_air(x: i32, y: i32) -> Block {
         (135, 206, 235),
         BlockName::Air,
         false,
-        vec![],
+        [None, None, None, None, None, None],
         0,
         0,
     )
@@ -33,7 +38,7 @@ pub fn block_void(x: i32, y: i32) -> Block {
         (0, 0, 0),
         BlockName::Void,
         false,
-        vec![],
+        [None, None, None, None, None, None],
         0,
         0,
     )
@@ -45,8 +50,8 @@ pub fn block_stone(x: i32, y: i32) -> Block {
         (163, 140, 132),
         BlockName::Void,
         true,
-        vec![BlockType::Rock],
-        1, 
-        100, 
+        [Some(BlockFlag::Mine), None, None, None, None, None],
+        1,
+        100,
     )
 }

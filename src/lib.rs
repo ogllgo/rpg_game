@@ -1,8 +1,9 @@
 pub mod block;
 pub mod blocks;
+pub mod item;
 pub mod player;
 pub mod utils;
 pub mod world;
 
-pub use block::{ Block, BlockName, BLOCK_SIZE };
-pub use player::{ Player, GRAVITY_FORCE };
+pub use block::{BLOCK_SIZE, Block, BlockName};
+pub use player::{GRAVITY_FORCE, Player};
