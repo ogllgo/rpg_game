@@ -110,7 +110,7 @@ pub fn main() {
             let center_x = player.x + Player::WIDTH / 2.0;
             let center_y = player.y + Player::HEIGHT / 2.0;
 
-            let (target_x, target_y) = match player.look_dir {
+            let (target_x, target_y) = match &player.look_dir {
                 Direction::Right => (center_x + 1.0, center_y),
                 Direction::Left => (center_x - 1.0, center_y),
                 Direction::Up => (center_x, center_y - 1.0),
@@ -121,8 +121,7 @@ pub fn main() {
             world.hit_block(
                 target_x.floor() as i32,
                 target_y.floor() as i32,
-                player.mining_speed as f32 * dt,
-                1,
+                &mut player,
             );
         }
         let blocks: Vec<Block> = world
@@ -174,18 +173,6 @@ pub fn main() {
         }
 
         player.render(&mut canvas, &camera, scale);
-        let font = ttf_context
-            .load_font("/usr/share/fonts/TTF/Arial.TTF", 24)
-            .unwrap();
-        render_text_to_canvas(
-            &mut canvas,
-            &texture_creator,
-            &font,
-            "I love SDL!",
-            0,
-            0,
-        )
-        .unwrap();
         canvas.present();
 
         let elapsed = Instant::now() - now;

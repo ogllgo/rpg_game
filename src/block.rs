@@ -1,3 +1,4 @@
+use crate::item::ItemName;
 use sdl2::{rect::FRect, render::Canvas, video::Window};
 
 pub const BLOCK_SIZE: i32 = 10;
@@ -26,9 +27,10 @@ pub struct Block {
     pub can_collide: bool,
     flags: [Option<BlockFlag>; 6],
     flag_count: usize,
-    pub required_level: i32,
+    pub required_level: u32,
     pub health: f32,
     pub max_health: i32,
+    pub drop_item: Option<ItemName>,
 }
 
 impl Block {
@@ -77,8 +79,9 @@ impl Block {
         block_type: BlockName,
         can_collide: bool,
         flags: [Option<BlockFlag>; 6],
-        resist: i32,
+        resist: u32,
         max_health: i32,
+        drop_item: Option<ItemName>,
     ) -> Self {
         let mut flags_count: usize = 1;
         for i in 0..6 {
@@ -97,6 +100,7 @@ impl Block {
             required_level: resist,
             max_health,
             health: max_health as f32,
+            drop_item,
         }
     }
     pub fn can_be_hit(&self) -> bool {

@@ -1,15 +1,23 @@
 use sdl2::rect::FRect;
 use sdl2::{render::Canvas, video::Window};
 
-use crate::{Block, utils::Direction};
+use crate::item::Item;
+use crate::{Block, DamageType, utils::Direction};
 pub const GRAVITY_FORCE: f32 = 30.0;
+#[derive(Debug)]
 pub struct Player {
     pub x: f32,
     pub y: f32,
     pub look_dir: Direction,
     pub velocity_x: f32,
     pub velocity_y: f32,
-    pub mining_speed: i32,
+    pub mining_speed: f32,
+    pub mining_spread: u32,
+    pub health: f32,
+    pub max_health: f32,
+    pub inventory: [Option<Item>; 40],
+    pub active_inventory_slot: usize,
+    pub stash: Vec<Item>,
 }
 
 fn aabb_collision(
@@ -54,7 +62,13 @@ impl Player {
             look_dir: Direction::None,
             velocity_x: 0.0,
             velocity_y: 0.0,
-            mining_speed: 100,
+            mining_speed: 100.0,
+            health: 100.0,
+            max_health: 100.0,
+            inventory: [const { None }; 40],
+            active_inventory_slot: 0,
+            mining_spread: 1,
+            stash: vec![],
         }
     }
     pub fn apply_gravity(&mut self, dt: f32) {
@@ -133,7 +147,7 @@ impl Player {
                         lo = mid;
                     }
                 }
-
+                self.take_fall_damage();
                 self.y = contact_y;
                 self.velocity_y = 0.0;
             } else {
@@ -275,5 +289,73 @@ impl Player {
                 Direction::Up
             }
         };
+    }
+    pub fn get_weaknesses(&self) -> Vec<DamageType> {
+        let mut weaknesses = Vec::new();
+        weaknesses.push(DamageType::Physical);
+
+        weaknesses
+    }
+
+    pub fn calculate_mining_speed(&self) -> f32 {
+        let mul = 1.0;
+        self.mining_speed * mul
+    }
+
+    fn next_free_inventory_slot(&self) -> Option<usize> {
+        self.inventory.iter().position(|slot| slot.is_none())
+    }
+
+    fn next_usable_inventory_slot(&self, item: &Item) -> Option<usize> {
+        for i in 0..self.inventory.len() {
+            if let Some(val) = &self.inventory[i] {
+                if val.name != item.name {
+                    continue;
+                }
+                if val.amount + item.amount > val.max_stack {
+                    continue;
+                }
+                return Some(i);
+            }
+        }
+        return None;
+    }
+
+    pub fn add_item(&mut self, mut item: Item) {
+        // Try stacking into existing compatible slots
+        for slot in self.inventory.iter_mut() {
+            if let Some(existing_item) = slot {
+                if existing_item.name == item.name
+                    && existing_item.amount < existing_item.max_stack
+                {
+                    let space = existing_item.max_stack - existing_item.amount;
+                    let to_add = item.amount.min(space);
+                    existing_item.amount += to_add;
+                    item.amount -= to_add;
+
+                    if item.amount == 0 {
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Try placing into empty slots
+        for slot in self.inventory.iter_mut() {
+            if slot.is_none() {
+                let to_place = item.amount.min(item.max_stack);
+                let mut new_item = item.clone();
+                new_item.amount = to_place;
+                *slot = Some(new_item);
+                item.amount -= to_place;
+
+                if item.amount == 0 {
+                    return;
+                }
+            }
+        }
+
+        // Inventory full, stash remaining item
+        self.stash.push(item);
     }
 }

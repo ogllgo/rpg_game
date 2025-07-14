@@ -1,4 +1,4 @@
-use crate::{Block, BlockName, block::BlockFlag};
+use crate::{Block, BlockName, block::BlockFlag, item::ItemName};
 // @TODO: make this use textures instead of solid colors
 // maybe also have LOD textures, as well as quality scales
 // or we could just do some dirty algorithms on first launch to write LODs and downscaled textures to a directory
@@ -15,6 +15,7 @@ pub fn block_dirt(x: i32, y: i32) -> Block {
         [Some(BlockFlag::Dig), None, None, None, None, None],
         0,  // dirt is soft
         50, // so it takes litle time
+        None,
     )
 }
 
@@ -28,6 +29,7 @@ pub fn block_air(x: i32, y: i32) -> Block {
         [None, None, None, None, None, None],
         0,
         0,
+        None,
     )
 }
 
@@ -41,6 +43,7 @@ pub fn block_void(x: i32, y: i32) -> Block {
         [None, None, None, None, None, None],
         0,
         0,
+        None,
     )
 }
 pub fn block_stone(x: i32, y: i32) -> Block {
@@ -53,5 +56,6 @@ pub fn block_stone(x: i32, y: i32) -> Block {
         [Some(BlockFlag::Mine), None, None, None, None, None],
         1,
         100,
+        Some(ItemName::Stone),
     )
 }

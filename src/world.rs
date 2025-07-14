@@ -1,7 +1,7 @@
 use noise::{NoiseFn, Perlin};
 use std::collections::HashMap;
 
-use crate::{Block, block::BlockFlag, blocks::*};
+use crate::{Block, Player, block::BlockFlag, blocks::*, items::*};
 
 type TilePos = (i32, i32);
 
@@ -178,24 +178,20 @@ impl World {
             .get_mut(local_x as usize)?
             .get_mut(local_y as usize)
     }
-    pub fn hit_block(
-        &mut self,
-        x: i32,
-        y: i32,
-        damage: f32,
-        damage_level: i32,
-    ) {
+    pub fn hit_block(&mut self, x: i32, y: i32, player: &mut Player) {
         let block = self.get_block_mut(x, y).unwrap();
         if block.can_be_hit() {
-            let mut damage = damage;
-            if damage_level < block.required_level {
+            let mut damage = player.calculate_mining_speed();
+            if player.mining_spread < block.required_level.try_into().unwrap() {
                 damage /= 2.0;
             }
             block.health -= damage;
             if block.health <= 0.0 {
+                if let Some(item) = block.drop_item {
+                    player.add_item(item_from_name(item, 1));
+                }
                 self.remove_block(x, y);
-                // @IMPLEMENT: item drops
-                // add directly to inventory; no 'floating' items like in skyblock
+                println!("{:?}", player.inventory);
             }
         }
     }
