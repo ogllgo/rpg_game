@@ -61,7 +61,7 @@ pub fn main() {
 
                 _ => {}
             }
-            game.manage_input(event);
+            game.manage_input(&event);
         }
 
         let (mouse_x, mouse_y) =
@@ -82,14 +82,14 @@ pub fn main() {
                 Direction::None => (center_x, center_y),
             };
 
-            game.world.hit_block(
+            game.map.hit_block(
                 target_x.floor() as i32,
                 target_y.floor() as i32,
                 &mut player,
             );
         }
         let blocks: Vec<Block> = game
-            .world
+            .map
             .get_chunks_around_point(
                 player.x,
                 player.y,
