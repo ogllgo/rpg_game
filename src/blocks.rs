@@ -5,6 +5,7 @@ use crate::{Block, BlockName, block::BlockFlag, item::ItemName};
 // so that all we have to do is link to some highdef texture (128x128?) and it does the rest
 // but that would probably require something like `pub fn get_all_textures` that returns each `block_*`.texture_path
 // and definitely texture caching. we can't have, like, 100 I/O operations a frame
+
 pub fn block_dirt(x: i32, y: i32) -> Block {
     Block::new(
         x,
@@ -46,6 +47,7 @@ pub fn block_void(x: i32, y: i32) -> Block {
         None,
     )
 }
+
 pub fn block_stone(x: i32, y: i32) -> Block {
     Block::new(
         x,

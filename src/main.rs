@@ -1,40 +1,27 @@
 use rpg_game::Block;
 use rpg_game::utils::Direction;
+use rpg_game::world::Game;
 use rpg_game::{Player, world::World};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
-use sdl2::rect::{FRect, Rect};
-use sdl2::render::{Canvas, TextureCreator};
-use sdl2::ttf::Font;
-use sdl2::video::Window;
+use sdl2::rect::FRect;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
-
-fn render_text_to_canvas<T>(
-    canvas: &mut Canvas<Window>,
-    texture_creator: &TextureCreator<T>,
-    font: &Font,
-    text: &str,
-    x: i32,
-    y: i32,
-) -> Result<(), String> {
-    let surface = font
-        .render(text)
-        .blended(Color::RGBA(0, 0, 0, 255))
-        .unwrap();
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .unwrap();
-    let query = texture.query();
-    let target = Rect::new(x, y, query.width, query.height);
-    canvas.copy(&texture, None, Some(target))?;
-    Ok(())
-}
+const WINDOW_HEIGHT: f32 = 600.0;
+const WINDOW_WIDTH: f32 = 800.0;
 
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
+
+    let window = video_subsystem
+        .window("window", WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32)
+        .position_centered()
+        .build()
+        .unwrap();
+    let mut canvas = window.into_canvas().build().unwrap();
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
     let mut player = Player::new(0.0, 0.0);
 
     // Initial camera size (tiles shown)
@@ -47,25 +34,11 @@ pub fn main() {
         camera_height,
     );
 
-    let window_width = 800.0;
-    let window_height = 600.0;
-
-    let window = video_subsystem
-        .window("window", window_width as u32, window_height as u32)
-        .position_centered()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
-    let texture_creator = canvas.texture_creator();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-
-    let mut world = World::new(6589);
+    let mut game = Game::new(6589);
 
     // Scale based on camera and window size
-    let scale_x: f32 = window_width / camera.w;
-    let scale_y: f32 = window_height / camera.h;
+    let scale_x: f32 = WINDOW_WIDTH / camera.w;
+    let scale_y: f32 = WINDOW_HEIGHT / camera.h;
     let scale = scale_x.min(scale_y);
 
     let mut pressed_keys = HashSet::new();
@@ -86,18 +59,9 @@ pub fn main() {
                     ..
                 } => break 'running,
 
-                Event::KeyDown {
-                    keycode: Some(key), ..
-                } => {
-                    pressed_keys.insert(key);
-                }
-                Event::KeyUp {
-                    keycode: Some(key), ..
-                } => {
-                    pressed_keys.remove(&key);
-                }
                 _ => {}
             }
+            game.manage_input(event);
         }
 
         let (mouse_x, mouse_y) =
@@ -118,13 +82,14 @@ pub fn main() {
                 Direction::None => (center_x, center_y),
             };
 
-            world.hit_block(
+            game.world.hit_block(
                 target_x.floor() as i32,
                 target_y.floor() as i32,
                 &mut player,
             );
         }
-        let blocks: Vec<Block> = world
+        let blocks: Vec<Block> = game
+            .world
             .get_chunks_around_point(
                 player.x,
                 player.y,
@@ -152,7 +117,7 @@ pub fn main() {
         player.apply_gravity(dt);
         player.move_step(&blocks, dt);
 
-        world.update_around_point(
+        game.update_around_point(
             player.x,
             player.y,
             camera_width * 2.0,
@@ -162,8 +127,6 @@ pub fn main() {
         // Update camera centered on player
         camera.x = player.x + Player::WIDTH / 2.0 - camera.w / 2.0;
         camera.y = player.y + Player::HEIGHT / 2.0 - camera.h / 2.0;
-
-        // No fixed board bounds to clamp to; if you want clamp, do it dynamically here
 
         canvas.set_draw_color((0, 0, 0));
         canvas.clear();
