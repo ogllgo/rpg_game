@@ -3,7 +3,10 @@ use glam::{IVec2, Vec2};
 use hecs::World as HecsWorld;
 use noise::{NoiseFn, Perlin};
 use sdl2::{event::Event, keyboard::Keycode, mouse::MouseButton};
-use std::collections::{HashMap, HashSet};
+use std::{
+    array,
+    collections::{HashMap, HashSet},
+};
 
 #[derive(Clone)]
 pub struct Chunk {
@@ -64,32 +67,28 @@ impl Chunk {
         let mut block: Block = if y >= 40 {
             let noise = perlin.get([x as f64 * scale, y as f64 * scale]);
             if noise < 0.5 {
-                block_dirt(x, y)
+                block_dirt(IVec2::new(x, y))
             } else {
-                block_stone(x, y)
+                block_stone(IVec2::new(x, y))
             }
         } else {
-            block_air(x, y)
+            block_air(IVec2::new(x, y))
         };
-        if block.x % Chunk::SIZE as i32 == 0
-            || block.y % Chunk::SIZE as i32 == 0
+        if block.pos.x % Chunk::SIZE as i32 == 0
+            || block.pos.y % Chunk::SIZE as i32 == 0
         {
             block.add_flag(BlockFlag::Highlight);
         }
         block
     }
     fn new(chunk_x: i32, chunk_y: i32, perlin: Perlin) -> Self {
-        let mut tiles: [[Block; Chunk::SIZE]; Chunk::SIZE] =
-            [[block_void(0, 0); Chunk::SIZE]; Chunk::SIZE];
-        for x in 0..Chunk::SIZE {
-            for y in 0..Chunk::SIZE {
+        let tiles: [[Block; Chunk::SIZE]; Chunk::SIZE] = array::from_fn(|x| {
+            array::from_fn(|y| {
                 let (world_x, world_y) =
                     Chunk::chunk_to_world(chunk_x, chunk_y, x as i32, y as i32);
-                let block =
-                    Chunk::generate_block(world_x, world_y, perlin, 0.3);
-                tiles[x][y] = block;
-            }
-        }
+                Chunk::generate_block(world_x, world_y, perlin, 0.3)
+            })
+        });
         Self {
             x: chunk_x,
             y: chunk_y,
@@ -135,7 +134,9 @@ impl World {
             for chunk_x in (center_chunk_x - half_width_chunks)
                 ..=(center_chunk_x + half_width_chunks)
             {
-                if let std::collections::hash_map::Entry::Vacant(e) = self.chunks.entry(IVec2::new(chunk_x, chunk_y)) {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    self.chunks.entry(IVec2::new(chunk_x, chunk_y))
+                {
                     e.insert(Chunk::new(chunk_x, chunk_y, self.perlin));
                 }
             }
@@ -206,7 +207,7 @@ impl World {
         let block = self.get_block_mut(x, y).unwrap();
         if block.can_be_hit() {
             let mut damage = player.calculate_mining_speed();
-            if player.mining_spread < block.required_level.try_into().unwrap() {
+            if player.mining_spread < block.required_level {
                 damage /= 2.0;
             }
             block.health -= damage;
@@ -220,9 +221,10 @@ impl World {
         }
     }
     pub fn remove_block(&mut self, x: i32, y: i32) {
-        let block = self.get_block_mut(x, y).unwrap_or_else(|| panic!("There should be a block at ({}, {}), but there isn't",
-            x, y));
-        *block = block_air(x, y);
+        let block = self.get_block_mut(x, y).unwrap_or_else(|| {
+            panic!("There should be a block at ({}, {}), but there isn't", x, y)
+        });
+        *block = block_air(IVec2::new(x, y));
     }
 }
 

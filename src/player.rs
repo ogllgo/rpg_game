@@ -76,7 +76,7 @@ impl Player {
             (self.velocity_y + GRAVITY_FORCE * dt).min(Self::TERMINAL_VELOCITY);
     }
 
-    pub fn move_step(&mut self, blocks: &Vec<Block>, dt: f32) {
+    pub fn move_step(&mut self, blocks: &[Block], dt: f32) {
         // Total movement vector based on velocity and delta time
         let dx = self.velocity_x * dt;
         let dy = self.velocity_y * dt;
@@ -97,8 +97,8 @@ impl Player {
                     y,
                     Self::WIDTH,
                     Self::HEIGHT,
-                    block.x,
-                    block.y,
+                    block.pos.x,
+                    block.pos.y,
                 ) && block.can_collide
             })
         };
@@ -207,18 +207,18 @@ impl Player {
             ))
             .unwrap();
     }
-    fn is_on_ground(&self, blocks: &Vec<Block>) -> bool {
+    fn is_on_ground(&self, blocks: &[Block]) -> bool {
         let feet_y = self.y + Self::HEIGHT;
 
         blocks.iter().any(|block| {
             block.can_collide &&
             // block's top edge is close to player's feet
-            (block.y as f32 - feet_y).abs() < 0.05 &&
+            (block.pos.y as f32 - feet_y).abs() < 0.05 &&
             // player horizontally overlaps block
-            !(self.x + Self::WIDTH <= block.x as f32 || self.x >= (block.x as f32 + 1.0))
+            !(self.x + Self::WIDTH <= block.pos.x as f32 || self.x >= (block.pos.x as f32 + 1.0))
         })
     }
-    pub fn try_jump(&mut self, blocks: &Vec<Block>) {
+    pub fn try_jump(&mut self, blocks: &[Block]) {
         if self.is_on_ground(blocks) {
             self.velocity_y = -20.0; // jump impulse, tune this value to your liking
         }
@@ -289,8 +289,7 @@ impl Player {
         };
     }
     pub fn get_weaknesses(&self) -> Vec<DamageType> {
-        let mut weaknesses = Vec::new();
-        weaknesses.push(DamageType::Physical);
+        let weaknesses = vec![DamageType::Physical];
 
         weaknesses
     }
@@ -321,19 +320,15 @@ impl Player {
 
     pub fn add_item(&mut self, mut item: Item) {
         // Try stacking into existing compatible slots
-        for slot in self.inventory.iter_mut() {
-            if let Some(existing_item) = slot {
-                if existing_item.name == item.name
-                    && existing_item.amount < existing_item.max_stack
-                {
-                    let space = existing_item.max_stack - existing_item.amount;
-                    let to_add = item.amount.min(space);
-                    existing_item.amount += to_add;
-                    item.amount -= to_add;
+        for slot in self.inventory.iter_mut().flatten() {
+            if slot.name == item.name && slot.amount < slot.max_stack {
+                let space = slot.max_stack - slot.amount;
+                let to_add = item.amount.min(space);
+                slot.amount += to_add;
+                item.amount -= to_add;
 
-                    if item.amount == 0 {
-                        return;
-                    }
+                if item.amount == 0 {
+                    return;
                 }
             }
         }

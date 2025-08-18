@@ -1,11 +1,10 @@
 use rpg_game::Block;
 use rpg_game::utils::Direction;
 use rpg_game::world::Game;
-use rpg_game::{Player, world::World};
+use rpg_game::Player;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::FRect;
-use std::collections::HashSet;
 use std::time::{Duration, Instant};
 const WINDOW_HEIGHT: f32 = 600.0;
 const WINDOW_WIDTH: f32 = 800.0;
