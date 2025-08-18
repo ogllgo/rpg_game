@@ -1,13 +1,13 @@
+use glam::Vec2;
 use sdl2::rect::FRect;
 use sdl2::{render::Canvas, video::Window};
 
 use crate::item::Item;
-use crate::{Block, DamageType, utils::Direction};
+use crate::{Block, utils::Direction};
 pub const GRAVITY_FORCE: f32 = 30.0;
 #[derive(Debug)]
 pub struct Player {
-    pub x: f32,
-    pub y: f32,
+    pub pos: Vec2,
     pub look_dir: Direction,
     pub velocity_x: f32,
     pub velocity_y: f32,
@@ -25,8 +25,8 @@ fn aabb_collision(
     py: f32,
     pw: f32,
     ph: f32,
-    bx: i32,
-    by: i32,
+    bx: f32,
+    by: f32,
 ) -> bool {
     let bw = 1.0;
     let bh = 1.0;
@@ -38,10 +38,10 @@ fn aabb_collision(
     let p_bottom = py + ph;
 
     // Block bbox edges
-    let b_left = bx as f32;
-    let b_right = bx as f32 + bw;
-    let b_top = by as f32;
-    let b_bottom = by as f32 + bh;
+    let b_left = bx;
+    let b_right = bx + bw;
+    let b_top = by;
+    let b_bottom = by + bh;
 
     // Check for overlap on x and y axes
     !(p_right <= b_left
@@ -56,10 +56,9 @@ impl Player {
     const TERMINAL_VELOCITY: f32 = 53.0;
 
     #[must_use]
-    pub fn new(x: f32, y: f32) -> Self {
+    pub fn new(pos: Vec2) -> Self {
         Self {
-            x,
-            y,
+            pos,
             look_dir: Direction::None,
             velocity_x: 0.0,
             velocity_y: 0.0,
@@ -106,17 +105,17 @@ impl Player {
 
         for _ in 0..steps {
             // Try moving along X
-            let tentative_x = self.x + step_dx;
-            if collides(tentative_x, self.y) {
+            let tentative_x = self.pos.x + step_dx;
+            if collides(tentative_x, self.pos.y) {
                 // Collision: binary search between current and target X
                 let mut lo = 0.0;
                 let mut hi = step_dx;
-                let mut contact_x = self.x;
+                let mut contact_x = self.pos.x;
 
                 for _ in 0..5 {
                     let mid = lo + (hi - lo) / 2.0;
-                    let test_x = self.x + mid;
-                    if collides(test_x, self.y) {
+                    let test_x = self.pos.x + mid;
+                    if collides(test_x, self.pos.y) {
                         hi = mid;
                     } else {
                         contact_x = test_x;
@@ -124,35 +123,34 @@ impl Player {
                     }
                 }
 
-                self.x = contact_x;
+                self.pos.x = contact_x;
                 self.velocity_x = 0.0;
             } else {
-                self.x = tentative_x;
+                self.pos.x = tentative_x;
             }
 
             // Try moving along Y
-            let tentative_y = self.y + step_dy;
-            if collides(self.x, tentative_y) {
+            let tentative_y = self.pos.y + step_dy;
+            if collides(self.pos.x, tentative_y) {
                 // Collision: binary search between current and target Y
                 let mut lo = 0.0;
                 let mut hi = step_dy;
-                let mut contact_y = self.y;
+                let mut contact_y = self.pos.y;
 
                 for _ in 0..5 {
                     let mid = lo + (hi - lo) / 2.0;
-                    let test_y = self.y + mid;
-                    if collides(self.x, test_y) {
+                    let test_y = self.pos.y + mid;
+                    if collides(self.pos.x, test_y) {
                         hi = mid;
                     } else {
                         contact_y = test_y;
                         lo = mid;
                     }
                 }
-                self.take_fall_damage();
-                self.y = contact_y;
+                self.pos.y = contact_y;
                 self.velocity_y = 0.0;
             } else {
-                self.y = tentative_y;
+                self.pos.y = tentative_y;
             }
         }
     }
@@ -164,8 +162,8 @@ impl Player {
     ) {
         canvas.set_draw_color((244, 194, 157));
 
-        let screen_x = (self.x - camera.x) * scale;
-        let screen_y = (self.y - camera.y) * scale;
+        let screen_x = (self.pos.x - camera.x) * scale;
+        let screen_y = (self.pos.y - camera.y) * scale;
 
         canvas
             .fill_frect(FRect::new(
@@ -177,8 +175,8 @@ impl Player {
             .unwrap();
 
         // Calculate the center of the player
-        let player_center_x = self.x + Self::WIDTH / 2.0;
-        let player_center_y = self.y + Self::HEIGHT / 2.0;
+        let player_center_x = self.pos.x + Self::WIDTH / 2.0;
+        let player_center_y = self.pos.y + Self::HEIGHT / 2.0;
 
         // Directional offset to get the block in front
         let (dx, dy) = match self.look_dir {
@@ -209,14 +207,14 @@ impl Player {
             .unwrap();
     }
     fn is_on_ground(&self, blocks: &[Block]) -> bool {
-        let feet_y = self.y + Self::HEIGHT;
+        let feet_y = self.pos.y + Self::HEIGHT;
 
         blocks.iter().any(|block| {
             block.can_collide &&
             // block's top edge is close to player's feet
             (block.pos.y as f32 - feet_y).abs() < 0.05 &&
             // player horizontally overlaps block
-            !(self.x + Self::WIDTH <= block.pos.x as f32 || self.x >= (block.pos.x as f32 + 1.0))
+            !(self.pos.x + Self::WIDTH <= block.pos.x as f32 || self.pos.x >= (block.pos.x as f32 + 1.0))
         })
     }
     pub fn try_jump(&mut self, blocks: &[Block]) {
@@ -264,10 +262,10 @@ impl Player {
 
     pub fn wrap_board(&mut self, board_x: u32) {
         let width = board_x as f32;
-        if self.x < 0.0 {
-            self.x += width;
-        } else if self.x > width {
-            self.x -= width;
+        if self.pos.x < 0.0 {
+            self.pos.x += width;
+        } else if self.pos.x > width {
+            self.pos.x -= width;
         }
     }
     pub fn look_at(&mut self, target_x: f32, target_y: f32) {

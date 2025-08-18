@@ -1,3 +1,4 @@
+use glam::Vec2;
 use rpg_game::Block;
 use rpg_game::Player;
 use rpg_game::utils::Direction;
@@ -21,7 +22,7 @@ pub fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut player = Player::new(0.0, 0.0);
+    let mut player = Player::new(Vec2::ZERO);
 
     // Initial camera size (tiles shown)
     let camera_width = 40.0;
