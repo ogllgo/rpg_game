@@ -85,7 +85,7 @@ impl Block {
     ) -> Self {
         let mut flags_count: usize = 1;
         for i in 0..6 {
-            if let Some(_) = flags[i] {
+            if flags[i].is_some() {
                 flags_count += 1;
             }
         }

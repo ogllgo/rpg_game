@@ -41,7 +41,6 @@ pub fn main() {
     let scale_y: f32 = WINDOW_HEIGHT / camera.h;
     let scale = scale_x.min(scale_y);
 
-    let mut pressed_keys = HashSet::new();
     let fps: f32 = 60.0;
     let frame_duration = Duration::from_secs_f32(1.0 / fps);
     let mut last_frame_time = Instant::now();
@@ -99,15 +98,15 @@ pub fn main() {
             .iter()
             .flat_map(|c| c.flatten())
             .collect();
-        if pressed_keys.contains(&Keycode::Space) {
+        if game.input.keyboard.pressed.contains(&Keycode::Space) {
             player.try_jump(&blocks);
         }
-        if pressed_keys.contains(&Keycode::Left)
-            || pressed_keys.contains(&Keycode::A)
+        if game.input.keyboard.pressed.contains(&Keycode::Left)
+            || game.input.keyboard.pressed.contains(&Keycode::A)
         {
             player.try_move(Direction::Left, dt);
-        } else if pressed_keys.contains(&Keycode::Right)
-            || pressed_keys.contains(&Keycode::D)
+        } else if game.input.keyboard.pressed.contains(&Keycode::Right)
+            || game.input.keyboard.pressed.contains(&Keycode::D)
         {
             player.try_move(Direction::Right, dt);
         } else {
@@ -117,7 +116,7 @@ pub fn main() {
         player.apply_gravity(dt);
         player.move_step(&blocks, dt);
 
-        game.update_around_point(
+        game.map.update_around_point(
             player.x,
             player.y,
             camera_width * 2.0,

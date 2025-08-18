@@ -57,8 +57,8 @@ impl Player {
 
     pub fn new(x: f32, y: f32) -> Self {
         Self {
-            x: x,
-            y: y,
+            x,
+            y,
             look_dir: Direction::None,
             velocity_x: 0.0,
             velocity_y: 0.0,
@@ -97,8 +97,8 @@ impl Player {
                     y,
                     Self::WIDTH,
                     Self::HEIGHT,
-                    block.x as i32,
-                    block.y as i32,
+                    block.x,
+                    block.y,
                 ) && block.can_collide
             })
         };
@@ -282,12 +282,10 @@ impl Player {
             } else {
                 Direction::Left
             }
+        } else if dy > 0.0 {
+            Direction::Down
         } else {
-            if dy > 0.0 {
-                Direction::Down
-            } else {
-                Direction::Up
-            }
+            Direction::Up
         };
     }
     pub fn get_weaknesses(&self) -> Vec<DamageType> {
@@ -318,7 +316,7 @@ impl Player {
                 return Some(i);
             }
         }
-        return None;
+        None
     }
 
     pub fn add_item(&mut self, mut item: Item) {
@@ -344,7 +342,7 @@ impl Player {
         for slot in self.inventory.iter_mut() {
             if slot.is_none() {
                 let to_place = item.amount.min(item.max_stack);
-                let mut new_item = item.clone();
+                let mut new_item = item;
                 new_item.amount = to_place;
                 *slot = Some(new_item);
                 item.amount -= to_place;

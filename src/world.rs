@@ -93,7 +93,7 @@ impl Chunk {
         Self {
             x: chunk_x,
             y: chunk_y,
-            tiles: tiles,
+            tiles,
         }
     }
     pub fn flatten(&self) -> Vec<Block> {
@@ -125,9 +125,9 @@ impl World {
         let center_chunk_y = (y.floor() as i32).div_euclid(Chunk::SIZE_I);
 
         let half_width_chunks =
-            ((load_width as f32 / Chunk::SIZE_I as f32) / 2.0).ceil() as i32;
+            ((load_width / Chunk::SIZE_I as f32) / 2.0).ceil() as i32;
         let half_height_chunks =
-            ((load_height as f32 / Chunk::SIZE_I as f32) / 2.0).ceil() as i32;
+            ((load_height / Chunk::SIZE_I as f32) / 2.0).ceil() as i32;
 
         for chunk_y in (center_chunk_y - half_height_chunks)
             ..=(center_chunk_y + half_height_chunks)
@@ -135,11 +135,8 @@ impl World {
             for chunk_x in (center_chunk_x - half_width_chunks)
                 ..=(center_chunk_x + half_width_chunks)
             {
-                if !self.chunks.contains_key(&IVec2::new(chunk_x, chunk_y)) {
-                    self.chunks.insert(
-                        IVec2::new(chunk_x, chunk_y),
-                        Chunk::new(chunk_x, chunk_y, self.perlin),
-                    );
+                if let std::collections::hash_map::Entry::Vacant(e) = self.chunks.entry(IVec2::new(chunk_x, chunk_y)) {
+                    e.insert(Chunk::new(chunk_x, chunk_y, self.perlin));
                 }
             }
         }
@@ -223,11 +220,15 @@ impl World {
         }
     }
     pub fn remove_block(&mut self, x: i32, y: i32) {
-        let block = self.get_block_mut(x, y).expect(&format!(
-            "There should be a block at ({}, {}), but there isn't",
-            x, y
-        ));
+        let block = self.get_block_mut(x, y).unwrap_or_else(|| panic!("There should be a block at ({}, {}), but there isn't",
+            x, y));
         *block = block_air(x, y);
+    }
+}
+
+impl Default for KeyboardInput {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -241,6 +242,12 @@ impl KeyboardInput {
     }
 }
 
+impl Default for MouseInput {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MouseInput {
     pub fn new() -> Self {
         Self {
@@ -249,6 +256,12 @@ impl MouseInput {
             pressed: HashSet::new(),
             pos: Vec2::ZERO,
         }
+    }
+}
+
+impl Default for Input {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

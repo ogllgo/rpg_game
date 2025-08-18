@@ -68,7 +68,7 @@ impl Item {
 
     pub fn weapon_props(&self) -> Option<&WeaponProps> {
         if let ItemProps::Weapon(w) = &self.props {
-            Some(&w)
+            Some(w)
         } else {
             None
         }
@@ -76,7 +76,7 @@ impl Item {
 
     pub fn tool_props(&self) -> Option<&ToolProps> {
         if let ItemProps::Tool(t) = &self.props {
-            Some(&t)
+            Some(t)
         } else {
             None
         }
