@@ -90,7 +90,7 @@ impl Block {
                 .unwrap();
         }
     }
-    pub fn can_be_hit(&self) -> bool {
+    #[must_use] pub fn can_be_hit(&self) -> bool {
         self.flags.iter().any(|b| {
             if let Some(bt) = b {
                 matches!(bt, BlockFlag::Mine | BlockFlag::Chop | BlockFlag::Dig)
@@ -146,7 +146,7 @@ impl Block {
 }
 
 impl BlockBuilder {
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             pos: IVec2::ZERO,
             color: (255, 255, 255),
@@ -161,52 +161,52 @@ impl BlockBuilder {
         }
     }
 
-    pub fn pos(mut self, pos: IVec2) -> Self {
+    #[must_use] pub fn pos(mut self, pos: IVec2) -> Self {
         self.pos = pos;
         self
     }
 
-    pub fn color(mut self, color: (u8, u8, u8)) -> Self {
+    #[must_use] pub fn color(mut self, color: (u8, u8, u8)) -> Self {
         self.color = color;
         self
     }
 
-    pub fn block_type(mut self, block_type: BlockName) -> Self {
+    #[must_use] pub fn block_type(mut self, block_type: BlockName) -> Self {
         self.block_type = block_type;
         self
     }
 
-    pub fn can_collide(mut self, can_collide: bool) -> Self {
+    #[must_use] pub fn can_collide(mut self, can_collide: bool) -> Self {
         self.can_collide = can_collide;
         self
     }
 
-    pub fn required_level(mut self, level: u32) -> Self {
+    #[must_use] pub fn required_level(mut self, level: u32) -> Self {
         self.required_level = level;
         self
     }
 
-    pub fn health(mut self, health: f32) -> Self {
+    #[must_use] pub fn health(mut self, health: f32) -> Self {
         self.health = health;
         self
     }
 
-    pub fn max_health(mut self, max_health: i32) -> Self {
+    #[must_use] pub fn max_health(mut self, max_health: i32) -> Self {
         self.max_health = max_health;
         self
     }
 
-    pub fn drop_item(mut self, item: Option<ItemName>) -> Self {
+    #[must_use] pub fn drop_item(mut self, item: Option<ItemName>) -> Self {
         self.drop_item = item;
         self
     }
 
-    pub fn is_solid(mut self, solid: bool) -> Self {
+    #[must_use] pub fn is_solid(mut self, solid: bool) -> Self {
         self.is_solid = solid;
         self
     }
 
-    pub fn add_flag(mut self, flag: BlockFlag) -> Self {
+    #[must_use] pub fn add_flag(mut self, flag: BlockFlag) -> Self {
         for slot in &mut self.flags {
             if slot.is_none() {
                 *slot = Some(flag);
@@ -216,7 +216,7 @@ impl BlockBuilder {
         self
     }
 
-    pub fn build(self) -> Block {
+    #[must_use] pub fn build(self) -> Block {
         let flag_count = self.flags.iter().filter(|f| f.is_some()).count();
 
         Block {

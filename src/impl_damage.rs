@@ -6,7 +6,7 @@ impl Player {
         self.health -= amount;
         self.health = self.health.max(0.0);
     }
-    pub fn calculate_damage(
+    #[must_use] pub fn calculate_damage(
         &self,
         amount: f32,
         damage_types: &[DamageType],
@@ -24,7 +24,7 @@ impl Player {
         }
         amount * mul
     }
-    pub fn calculate_fall_damage(&self) -> f32 {
+    #[must_use] pub fn calculate_fall_damage(&self) -> f32 {
         if self.velocity_y < 3.0 {
             return 0.0;
         }

@@ -44,7 +44,7 @@ pub struct Item {
     pub props: ItemProps,
 }
 impl Item {
-    pub fn new(
+    #[must_use] pub fn new(
         max_stack: usize,
         amount: usize,
         rarity: ItemRarity,
@@ -62,11 +62,11 @@ impl Item {
         }
     }
 
-    pub fn is_weapon(&self) -> bool {
+    #[must_use] pub fn is_weapon(&self) -> bool {
         matches!(self.props, ItemProps::Weapon(_))
     }
 
-    pub fn weapon_props(&self) -> Option<&WeaponProps> {
+    #[must_use] pub fn weapon_props(&self) -> Option<&WeaponProps> {
         if let ItemProps::Weapon(w) = &self.props {
             Some(w)
         } else {
@@ -74,7 +74,7 @@ impl Item {
         }
     }
 
-    pub fn tool_props(&self) -> Option<&ToolProps> {
+    #[must_use] pub fn tool_props(&self) -> Option<&ToolProps> {
         if let ItemProps::Tool(t) = &self.props {
             Some(t)
         } else {

@@ -12,7 +12,7 @@ use crate::{
 // but that would probably require something like `pub fn get_all_textures` that returns each `block_*`.texture_path
 // and definitely texture caching. we can't have, like, 100 I/O operations a frame
 
-pub fn block_dirt(pos: IVec2) -> Block {
+#[must_use] pub fn block_dirt(pos: IVec2) -> Block {
     BlockBuilder::new()
         .pos(pos)
         .color((139, 69, 19))
@@ -24,7 +24,7 @@ pub fn block_dirt(pos: IVec2) -> Block {
         .build()
 }
 
-pub fn block_air(pos: IVec2) -> Block {
+#[must_use] pub fn block_air(pos: IVec2) -> Block {
     BlockBuilder::new()
         .pos(pos)
         .color((135, 206, 235))
@@ -35,7 +35,7 @@ pub fn block_air(pos: IVec2) -> Block {
         .build()
 }
 
-pub fn block_stone(pos: IVec2) -> Block {
+#[must_use] pub fn block_stone(pos: IVec2) -> Block {
     BlockBuilder::new()
         .pos(pos)
         .color((163, 140, 132))

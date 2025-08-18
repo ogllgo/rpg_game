@@ -55,6 +55,7 @@ impl Player {
     pub const HEIGHT: f32 = 0.8;
     const TERMINAL_VELOCITY: f32 = 53.0;
 
+    #[must_use]
     pub fn new(x: f32, y: f32) -> Self {
         Self {
             x,
@@ -241,7 +242,7 @@ impl Player {
                     self.velocity_x = max_speed;
                 }
             }
-            _ => println!("When trying to move, direction not horizontal"),
+            _ => {}
         }
     }
 
@@ -288,35 +289,37 @@ impl Player {
             Direction::Up
         };
     }
+    #[must_use]
     pub fn get_weaknesses(&self) -> Vec<DamageType> {
         let weaknesses = vec![DamageType::Physical];
 
         weaknesses
     }
 
+    #[must_use]
     pub fn calculate_mining_speed(&self) -> f32 {
         let mul = 1.0;
         self.mining_speed * mul
     }
 
-    fn next_free_inventory_slot(&self) -> Option<usize> {
-        self.inventory.iter().position(|slot| slot.is_none())
-    }
+    // fn next_free_inventory_slot(&self) -> Option<usize> {
+    //     self.inventory.iter().position(std::option::Option::is_none)
+    // }
 
-    fn next_usable_inventory_slot(&self, item: &Item) -> Option<usize> {
-        for i in 0..self.inventory.len() {
-            if let Some(val) = &self.inventory[i] {
-                if val.name != item.name {
-                    continue;
-                }
-                if val.amount + item.amount > val.max_stack {
-                    continue;
-                }
-                return Some(i);
-            }
-        }
-        None
-    }
+    // fn next_usable_inventory_slot(&self, item: &Item) -> Option<usize> {
+    //     for i in 0..self.inventory.len() {
+    //         if let Some(val) = &self.inventory[i] {
+    //             if val.name != item.name {
+    //                 continue;
+    //             }
+    //             if val.amount + item.amount > val.max_stack {
+    //                 continue;
+    //             }
+    //             return Some(i);
+    //         }
+    //     }
+    //     None
+    // }
 
     pub fn add_item(&mut self, mut item: Item) {
         // Try stacking into existing compatible slots
@@ -334,7 +337,7 @@ impl Player {
         }
 
         // Try placing into empty slots
-        for slot in self.inventory.iter_mut() {
+        for slot in &mut self.inventory {
             if slot.is_none() {
                 let to_place = item.amount.min(item.max_stack);
                 let mut new_item = item;

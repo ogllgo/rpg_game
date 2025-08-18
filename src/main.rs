@@ -1,7 +1,7 @@
 use rpg_game::Block;
+use rpg_game::Player;
 use rpg_game::utils::Direction;
 use rpg_game::world::Game;
-use rpg_game::Player;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::FRect;
@@ -48,7 +48,7 @@ pub fn main() {
         let now = Instant::now();
         let dt = (now - last_frame_time).as_secs_f32();
         last_frame_time = now;
-
+        game.input.clear_transient();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -100,12 +100,12 @@ pub fn main() {
         if game.input.keyboard.pressed.contains(&Keycode::Space) {
             player.try_jump(&blocks);
         }
-        if game.input.keyboard.pressed.contains(&Keycode::Left)
-            || game.input.keyboard.pressed.contains(&Keycode::A)
+        if game.input.keyboard.held.contains(&Keycode::Left)
+            || game.input.keyboard.held.contains(&Keycode::A)
         {
             player.try_move(Direction::Left, dt);
-        } else if game.input.keyboard.pressed.contains(&Keycode::Right)
-            || game.input.keyboard.pressed.contains(&Keycode::D)
+        } else if game.input.keyboard.held.contains(&Keycode::Right)
+            || game.input.keyboard.held.contains(&Keycode::D)
         {
             player.try_move(Direction::Right, dt);
         } else {
@@ -136,7 +136,7 @@ pub fn main() {
         player.render(&mut canvas, &camera, scale);
         canvas.present();
 
-        let elapsed = Instant::now() - now;
+        let elapsed = now.elapsed();
         if elapsed < frame_duration {
             std::thread::sleep(frame_duration - elapsed);
         }
