@@ -63,32 +63,6 @@ impl Block {
         canvas
             .fill_frect(FRect::new(screen_x, screen_y, scale, scale))
             .unwrap();
-        if self.flags.iter().any(|f| {
-            if let Some(bf) = f {
-                *bf == BlockFlag::Highlight
-            } else {
-                false
-            }
-        }) {
-            canvas.set_draw_color((
-                255 - self.color.0,
-                255 - self.color.1,
-                255 - self.color.2,
-            ));
-            let highlight_screen_x =
-                (self.pos.x as f32 - camera.pos.x + 0.2) * scale;
-            let highlight_screen_y =
-                (self.pos.y as f32 - camera.pos.y + 0.2) * scale;
-
-            canvas
-                .fill_frect(FRect::new(
-                    highlight_screen_x,
-                    highlight_screen_y,
-                    scale * 0.6,
-                    scale * 0.6,
-                ))
-                .unwrap();
-        }
     }
     #[must_use]
     pub fn can_be_hit(&self) -> bool {

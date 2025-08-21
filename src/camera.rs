@@ -62,10 +62,6 @@ impl Camera {
     }
 
     pub fn get_scale(&self) -> Vec2 {
-        println!(
-            "we are {} size camera and {} size window",
-            self.viewport_dims, self.window_dims
-        );
         self.window_dims / self.viewport_dims
     }
 

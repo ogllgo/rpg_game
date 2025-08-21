@@ -191,38 +191,6 @@ impl Player {
                 Player::HEIGHT * scale,
             ))
             .unwrap();
-
-        // Calculate the center of the player
-        let player_center_x = self.pos.x + Self::WIDTH / 2.0;
-        let player_center_y = self.pos.y + Self::HEIGHT / 2.0;
-
-        // Directional offset to get the block in front
-        let (dx, dy) = match self.look_dir {
-            Direction::Up => (0, -1),
-            Direction::Down => (0, 1),
-            Direction::Left => (-1, 0),
-            Direction::Right => (1, 0),
-            Direction::None => (0, 0),
-        };
-        // Compute block coordinates in world space
-        let front_block_x = (player_center_x + dx as f32).floor();
-        let front_block_y = (player_center_y + dy as f32).floor();
-
-        // Convert to screen space
-        let dot_screen_x = (front_block_x - camera.pos.x) * scale + scale / 2.0;
-        let dot_screen_y = (front_block_y - camera.pos.y) * scale + scale / 2.0;
-
-        // Draw red dot (small rectangle, e.g., 6x6 pixels)
-        canvas.set_draw_color((255, 0, 0));
-        let dot_size = 6.0;
-        canvas
-            .fill_frect(FRect::new(
-                dot_screen_x - dot_size / 2.0,
-                dot_screen_y - dot_size / 2.0,
-                dot_size,
-                dot_size,
-            ))
-            .unwrap();
     }
     fn is_on_ground(&self, blocks: &[Block]) -> bool {
         let feet_y = self.pos.y + Self::HEIGHT;

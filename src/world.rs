@@ -1,6 +1,5 @@
 use crate::{
     Block, Player,
-    block::BlockFlag,
     blocks::{block_air, block_dirt, block_stone},
     items::item_from_name,
 };
@@ -45,7 +44,7 @@ impl Chunk {
             scale != 1.0,
             "Scale is equal to 1! This will result in uniform terrain"
         );
-        let mut block: Block = if y >= 40 {
+        let block: Block = if y >= 40 {
             let noise =
                 perlin.get([f64::from(x) * scale, f64::from(y) * scale]);
             if noise < 0.5 {
@@ -56,11 +55,6 @@ impl Chunk {
         } else {
             block_air(IVec2::new(x, y))
         };
-        if block.pos.x % Chunk::SIZE as i32 == 0
-            || block.pos.y % Chunk::SIZE as i32 == 0
-        {
-            block.add_flag(BlockFlag::Highlight);
-        }
         block
     }
     fn new(chunk_x: i32, chunk_y: i32, perlin: Perlin) -> Self {
