@@ -1,9 +1,13 @@
-#[derive(Clone, Debug, Copy, PartialEq)]
+use derive_builder::Builder;
+
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub enum ItemRarity {
+    #[default]
     Common,
 }
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub enum ItemName {
+    #[default]
     Stone,
 }
 
@@ -28,13 +32,14 @@ pub struct ToolProps {
     spread: f32,     // how many extra blocks do you break (round down always)
 }
 
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub enum ItemProps {
     Weapon(WeaponProps),
     Tool(ToolProps),
+    #[default]
     None,
 }
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Builder)]
 pub struct Item {
     pub max_stack: usize,
     pub amount: usize,
@@ -43,8 +48,10 @@ pub struct Item {
     pub color: (u8, u8, u8),
     pub props: ItemProps,
 }
+
 impl Item {
-    #[must_use] pub fn new(
+    #[must_use]
+    pub fn new(
         max_stack: usize,
         amount: usize,
         rarity: ItemRarity,
@@ -62,11 +69,13 @@ impl Item {
         }
     }
 
-    #[must_use] pub fn is_weapon(&self) -> bool {
+    #[must_use]
+    pub fn is_weapon(&self) -> bool {
         matches!(self.props, ItemProps::Weapon(_))
     }
 
-    #[must_use] pub fn weapon_props(&self) -> Option<&WeaponProps> {
+    #[must_use]
+    pub fn weapon_props(&self) -> Option<&WeaponProps> {
         if let ItemProps::Weapon(w) = &self.props {
             Some(w)
         } else {
@@ -74,7 +83,8 @@ impl Item {
         }
     }
 
-    #[must_use] pub fn tool_props(&self) -> Option<&ToolProps> {
+    #[must_use]
+    pub fn tool_props(&self) -> Option<&ToolProps> {
         if let ItemProps::Tool(t) = &self.props {
             Some(t)
         } else {

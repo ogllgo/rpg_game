@@ -8,39 +8,47 @@ use crate::{
 
 #[must_use]
 pub fn block_dirt(pos: IVec2) -> Block {
-    BlockBuilder::new()
+    BlockBuilder::default()
         .pos(pos)
         .color((139, 69, 19))
         .block_type(BlockName::Dirt)
         .can_collide(true)
         .add_flag(BlockFlag::Dig)
         .required_level(0)
-        .max_health(50)
+        .max_health(50.0)
+        .health(50.0)
+        .drop_item(None)
         .build()
+        .unwrap()
 }
 
 #[must_use]
 pub fn block_air(pos: IVec2) -> Block {
-    BlockBuilder::new()
+    BlockBuilder::default()
         .pos(pos)
         .color((135, 206, 235))
         .block_type(BlockName::Air)
         .can_collide(false)
         .required_level(0)
-        .max_health(0)
+        .max_health(0.0)
+        .health(0.0)
+        .drop_item(None)
         .build()
+        .unwrap()
 }
 
 #[must_use]
 pub fn block_stone(pos: IVec2) -> Block {
-    BlockBuilder::new()
+    BlockBuilder::default()
         .pos(pos)
         .color((163, 140, 132))
         .block_type(BlockName::Stone)
         .can_collide(true)
         .add_flag(BlockFlag::Mine)
         .required_level(1)
-        .max_health(100)
+        .max_health(100.0)
+        .health(100.0)
         .drop_item(Some(ItemName::Stone))
         .build()
+        .unwrap()
 }

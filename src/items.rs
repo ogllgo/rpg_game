@@ -1,4 +1,4 @@
-use crate::item::{Item, ItemName, ItemProps, ItemRarity};
+use crate::item::{Item, ItemBuilder, ItemName, ItemProps, ItemRarity};
 
 #[must_use]
 pub fn item_from_name(item_name: ItemName, amount: usize) -> Item {
@@ -9,12 +9,13 @@ pub fn item_from_name(item_name: ItemName, amount: usize) -> Item {
 
 #[must_use]
 pub fn item_stone(amount: usize) -> Item {
-    Item::new(
-        64,
-        amount,
-        ItemRarity::Common,
-        ItemName::Stone,
-        (1, 1, 1),
-        ItemProps::None,
-    )
+    ItemBuilder::default()
+        .max_stack(64)
+        .amount(amount)
+        .name(ItemName::Stone)
+        .rarity(ItemRarity::Common)
+        .color((1, 1, 1))
+        .props(ItemProps::None)
+        .build()
+        .unwrap() // safe because we used the Default, meaning all field are init'd
 }
