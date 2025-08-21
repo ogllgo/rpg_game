@@ -145,7 +145,7 @@ impl World {
             for chunk_x in (center_chunk_x - half_chunks_x)
                 ..=(center_chunk_x + half_chunks_x)
             {
-                if let Some(_) = self.chunks.get(&IVec2::new(chunk_x, chunk_y))
+                if self.chunks.get(&IVec2::new(chunk_x, chunk_y)).is_some()
                 {
                     chunks.push(IVec2::new(chunk_x, chunk_y));
                 }
@@ -154,9 +154,9 @@ impl World {
         self.active_chunks = chunks;
     }
 
-    pub fn get_active_chunks(&self) -> Vec<&Chunk> {
+    #[must_use] pub fn get_active_chunks(&self) -> Vec<&Chunk> {
         let mut chunks: Vec<&Chunk> = Vec::new();
-        for chunk_index in self.active_chunks.iter() {
+        for chunk_index in &self.active_chunks {
             chunks.push(self.chunks.get(chunk_index).unwrap());
         }
         chunks
@@ -204,8 +204,6 @@ impl World {
         }
     }
     pub fn remove_block(&mut self, x: i32, y: i32) {
-        self.get_block_mut(x, y).map(|block| {
-            *block = block_air(IVec2::new(x, y));
-        });
+        if let Some(block) = self.get_block_mut(x, y) { *block = block_air(IVec2::new(x, y)); }
     }
 }

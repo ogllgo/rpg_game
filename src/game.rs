@@ -42,11 +42,11 @@ impl Game {
         Self {
             map: World::new(seed),
             camera: Camera::new(Vec2::ZERO, camera_dims, window_dims, 0.0),
-            sdl_context: sdl_context,
-            video_subsystem: video_subsystem,
-            window: window,
-            canvas: canvas,
-            event_pump: event_pump,
+            sdl_context,
+            video_subsystem,
+            window,
+            canvas,
+            event_pump,
             ecs: HecsWorld::new(),
             input: Input::new(),
             player: Player::default(),
@@ -60,7 +60,7 @@ impl Game {
                 return false;
             }
         }
-        return true;
+        true
     }
 
     pub fn tick(&mut self) {

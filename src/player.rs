@@ -54,7 +54,7 @@ pub struct Player {
 impl Default for Player {
     fn default() -> Self {
         Self {
-            inventory: [(); 40].map(|_| None),
+            inventory: [(); 40].map(|()| None),
             pos: Default::default(),
             look_dir: Default::default(),
             velocity_x: Default::default(),
