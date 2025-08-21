@@ -1,5 +1,5 @@
-use crate::item::ItemName;
-use glam::Vec2;
+use crate::{camera::Camera, item::ItemName};
+use glam::IVec2;
 use sdl2::{rect::FRect, render::Canvas, video::Window};
 
 pub const BLOCK_SIZE_PIXELS: i32 = 10;
@@ -22,7 +22,7 @@ pub enum BlockFlag {
 
 #[derive(Clone, Debug, Copy)]
 pub struct Block {
-    pub pos: Vec2,
+    pub pos: IVec2,
     pub color: (u8, u8, u8),
     pub block_type: BlockName,
     pub can_collide: bool,
@@ -37,7 +37,7 @@ pub struct Block {
 
 #[derive(Default)]
 pub struct BlockBuilder {
-    pos: Vec2,
+    pos: IVec2,
     color: (u8, u8, u8),
     block_type: BlockName,
     can_collide: bool,
@@ -53,12 +53,12 @@ impl Block {
     pub fn render(
         &self,
         canvas: &mut Canvas<Window>,
-        camera: &FRect,
+        camera: &Camera,
         scale: f32,
     ) {
-        let screen_x = (self.pos.x as f32 - camera.x) * scale;
-        let screen_y = (self.pos.y as f32 - camera.y) * scale;
-
+        let screen_x = (self.pos.x as f32 - camera.pos.x) * scale;
+        let screen_y = (self.pos.y as f32 - camera.pos.y) * scale;
+        // println!("screen pos: ({}, {})", screen_x, screen_y);
         canvas.set_draw_color(self.color);
         canvas
             .fill_frect(FRect::new(screen_x, screen_y, scale, scale))
@@ -76,9 +76,9 @@ impl Block {
                 255 - self.color.2,
             ));
             let highlight_screen_x =
-                (self.pos.x as f32 - camera.x + 0.2) * scale;
+                (self.pos.x as f32 - camera.pos.x + 0.2) * scale;
             let highlight_screen_y =
-                (self.pos.y as f32 - camera.y + 0.2) * scale;
+                (self.pos.y as f32 - camera.pos.y + 0.2) * scale;
 
             canvas
                 .fill_frect(FRect::new(
@@ -150,7 +150,7 @@ impl BlockBuilder {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            pos: Vec2::ZERO,
+            pos: IVec2::ZERO,
             color: (255, 255, 255),
             block_type: BlockName::default(),
             can_collide: false,
@@ -164,7 +164,7 @@ impl BlockBuilder {
     }
 
     #[must_use]
-    pub fn pos(mut self, pos: Vec2) -> Self {
+    pub fn pos(mut self, pos: IVec2) -> Self {
         self.pos = pos;
         self
     }

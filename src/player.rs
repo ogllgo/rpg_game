@@ -2,24 +2,6 @@ use glam::Vec2;
 use sdl2::rect::FRect;
 use sdl2::{render::Canvas, video::Window};
 
-use crate::item::Item;
-use crate::{Block, utils::Direction};
-pub const GRAVITY_FORCE: f32 = 30.0;
-#[derive(Debug)]
-pub struct Player {
-    pub pos: Vec2,
-    pub look_dir: Direction,
-    pub velocity_x: f32,
-    pub velocity_y: f32,
-    pub mining_speed: f32,
-    pub mining_spread: u32,
-    pub health: f32,
-    pub max_health: f32,
-    pub inventory: [Option<Item>; 40],
-    pub active_inventory_slot: usize,
-    pub stash: Vec<Item>,
-}
-
 fn aabb_collision(
     px: f32,
     py: f32,
@@ -50,6 +32,43 @@ fn aabb_collision(
         || p_top >= b_bottom)
 }
 
+use crate::camera::Camera;
+use crate::item::Item;
+use crate::{Block, utils::Direction};
+pub const GRAVITY_FORCE: f32 = 30.0;
+#[derive(Debug)]
+pub struct Player {
+    pub pos: Vec2,
+    pub look_dir: Direction,
+    pub velocity_x: f32,
+    pub velocity_y: f32,
+    pub mining_speed: f32,
+    pub mining_spread: u32,
+    pub health: f32,
+    pub max_health: f32,
+    pub inventory: [Option<Item>; 40],
+    pub active_inventory_slot: usize,
+    pub stash: Vec<Item>,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            inventory: [(); 40].map(|_| None),
+            pos: Default::default(),
+            look_dir: Default::default(),
+            velocity_x: Default::default(),
+            velocity_y: Default::default(),
+            mining_speed: Default::default(),
+            mining_spread: Default::default(),
+            health: Default::default(),
+            max_health: Default::default(),
+            active_inventory_slot: Default::default(),
+            stash: Default::default(),
+        }
+    }
+}
+
 impl Player {
     pub const WIDTH: f32 = 0.8;
     pub const HEIGHT: f32 = 0.8;
@@ -71,15 +90,14 @@ impl Player {
             stash: vec![],
         }
     }
-    pub fn apply_gravity(&mut self, dt: f32) {
-        self.velocity_y =
-            (self.velocity_y + GRAVITY_FORCE * dt).min(Self::TERMINAL_VELOCITY);
+    pub fn apply_gravity(&mut self, fps: f32) {
+        self.velocity_y = (self.velocity_y + GRAVITY_FORCE / fps)
+            .min(Self::TERMINAL_VELOCITY);
     }
 
-    pub fn move_step(&mut self, blocks: &[Block], dt: f32) {
-        // Total movement vector based on velocity and delta time
-        let dx = self.velocity_x * dt;
-        let dy = self.velocity_y * dt;
+    pub fn move_step(&mut self, blocks: &[Block], fps: f32) {
+        let dx = self.velocity_x / fps;
+        let dy = self.velocity_y / fps;
 
         // Determine number of sub-steps to break movement into
         let steps = dx.abs().max(dy.abs()).ceil() as usize;
@@ -97,8 +115,8 @@ impl Player {
                     y,
                     Self::WIDTH,
                     Self::HEIGHT,
-                    block.pos.x,
-                    block.pos.y,
+                    block.pos.x as f32,
+                    block.pos.y as f32,
                 ) && block.can_collide
             })
         };
@@ -157,13 +175,13 @@ impl Player {
     pub fn render(
         &self,
         canvas: &mut Canvas<Window>,
-        camera: &FRect,
+        camera: &Camera,
         scale: f32,
     ) {
         canvas.set_draw_color((244, 194, 157));
 
-        let screen_x = (self.pos.x - camera.x) * scale;
-        let screen_y = (self.pos.y - camera.y) * scale;
+        let screen_x = (self.pos.x - camera.pos.x) * scale;
+        let screen_y = (self.pos.y - camera.pos.y) * scale;
 
         canvas
             .fill_frect(FRect::new(
@@ -191,8 +209,8 @@ impl Player {
         let front_block_y = (player_center_y + dy as f32).floor();
 
         // Convert to screen space
-        let dot_screen_x = (front_block_x - camera.x) * scale + scale / 2.0;
-        let dot_screen_y = (front_block_y - camera.y) * scale + scale / 2.0;
+        let dot_screen_x = (front_block_x - camera.pos.x) * scale + scale / 2.0;
+        let dot_screen_y = (front_block_y - camera.pos.y) * scale + scale / 2.0;
 
         // Draw red dot (small rectangle, e.g., 6x6 pixels)
         canvas.set_draw_color((255, 0, 0));
@@ -219,23 +237,23 @@ impl Player {
     }
     pub fn try_jump(&mut self, blocks: &[Block]) {
         if self.is_on_ground(blocks) {
-            self.velocity_y = -20.0; // jump impulse, tune this value to your liking
+            self.velocity_y = -20.0; // @TODO: magic number
         }
     }
 
-    pub fn try_move(&mut self, direction: Direction, dt: f32) {
-        let acceleration = 60.0; // units per second per second
+    pub fn try_move(&mut self, direction: Direction, fps: f32) {
+        let acceleration = 60.0 / fps; // units per second per second
         let max_speed = 20.0; // max horizontal speed
 
         match direction {
             Direction::Left => {
-                self.velocity_x -= acceleration * dt;
+                self.velocity_x -= acceleration;
                 if self.velocity_x < -max_speed {
                     self.velocity_x = -max_speed;
                 }
             }
             Direction::Right => {
-                self.velocity_x += acceleration * dt;
+                self.velocity_x += acceleration;
                 if self.velocity_x > max_speed {
                     self.velocity_x = max_speed;
                 }
@@ -244,16 +262,16 @@ impl Player {
         }
     }
 
-    pub fn apply_friction(&mut self, dt: f32) {
-        let friction = 15.0; // units per second², tweak for slow down speed
+    pub fn apply_friction(&mut self, fps: f32) {
+        let friction = 15.0 / fps; // units per second², tweak for slow down speed
 
         if self.velocity_x > 0.0 {
-            self.velocity_x -= friction * dt;
+            self.velocity_x -= friction;
             if self.velocity_x < 0.0 {
                 self.velocity_x = 0.0;
             }
         } else if self.velocity_x < 0.0 {
-            self.velocity_x += friction * dt;
+            self.velocity_x += friction;
             if self.velocity_x > 0.0 {
                 self.velocity_x = 0.0;
             }
@@ -269,8 +287,8 @@ impl Player {
         }
     }
     pub fn look_at(&mut self, target_x: f32, target_y: f32) {
-        let px = self.x + Self::WIDTH / 2.0;
-        let py = self.y + Self::HEIGHT / 2.0;
+        let px = self.pos.x + Self::WIDTH / 2.0;
+        let py = self.pos.y + Self::HEIGHT / 2.0;
 
         let dx = target_x - px;
         let dy = target_y - py;
@@ -286,12 +304,6 @@ impl Player {
         } else {
             Direction::Up
         };
-    }
-    #[must_use]
-    pub fn get_weaknesses(&self) -> Vec<DamageType> {
-        let weaknesses = vec![DamageType::Physical];
-
-        weaknesses
     }
 
     #[must_use]

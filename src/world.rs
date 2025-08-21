@@ -4,14 +4,9 @@ use crate::{
     blocks::{block_air, block_dirt, block_stone},
     items::item_from_name,
 };
-use glam::{IVec2, Vec2};
-use hecs::World as HecsWorld;
+use glam::IVec2;
 use noise::{NoiseFn, Perlin};
-use sdl2::{event::Event, keyboard::Keycode, mouse::MouseButton};
-use std::{
-    array,
-    collections::{HashMap, HashSet},
-};
+use std::{array, collections::HashMap};
 
 #[derive(Clone)]
 pub struct Chunk {
@@ -19,35 +14,12 @@ pub struct Chunk {
     pub x: i32,
     pub y: i32,
 }
+
+#[derive(Default)]
 pub struct World {
     chunks: HashMap<IVec2, Chunk>,
     perlin: Perlin,
-}
-
-#[derive(Clone, Debug)]
-pub struct KeyboardInput {
-    pub held: HashSet<Keycode>,
-    pub released: HashSet<Keycode>,
-    pub pressed: HashSet<Keycode>,
-}
-
-#[derive(Clone, Debug)]
-pub struct MouseInput {
-    pub held: HashSet<MouseButton>,
-    pub released: HashSet<MouseButton>,
-    pub pressed: HashSet<MouseButton>,
-    pub pos: Vec2,
-}
-#[derive(Clone, Debug)]
-pub struct Input {
-    pub keyboard: KeyboardInput,
-    pub mouse: MouseInput,
-}
-
-pub struct Game {
-    pub map: World,
-    pub ecs: HecsWorld,
-    pub input: Input,
+    active_chunks: Vec<IVec2>,
 }
 
 impl Chunk {
@@ -122,6 +94,7 @@ impl World {
         Self {
             chunks: HashMap::new(),
             perlin: Perlin::new(seed),
+            active_chunks: Default::default(),
         }
     }
 
@@ -155,19 +128,16 @@ impl World {
         }
     }
 
-    // @TODO: make this `get_chunks_around_point`, they can do the rest
-    #[must_use]
-    pub fn get_chunks_around_point(
-        &self,
+    pub fn update_active_chunks(
+        &mut self,
         x: f32,
         y: f32,
         get_width: i32,
         get_height: i32,
-    ) -> Vec<&Chunk> {
+    ) {
         let center_chunk_x = (x.floor() as i32).div_euclid(Chunk::SIZE_I);
         let center_chunk_y = (y.floor() as i32).div_euclid(Chunk::SIZE_I);
 
-        // Convert width/height in blocks to chunks (round up maybe)
         let half_chunks_x =
             (get_width as f32 / Chunk::SIZE_I as f32 / 2.0).ceil() as i32;
         let half_chunks_y =
@@ -181,14 +151,20 @@ impl World {
             for chunk_x in (center_chunk_x - half_chunks_x)
                 ..=(center_chunk_x + half_chunks_x)
             {
-                if let Some(chunk) =
-                    self.chunks.get(&IVec2::new(chunk_x, chunk_y))
+                if let Some(_) = self.chunks.get(&IVec2::new(chunk_x, chunk_y))
                 {
-                    chunks.push(chunk);
+                    chunks.push(IVec2::new(chunk_x, chunk_y));
                 }
             }
         }
+        self.active_chunks = chunks;
+    }
 
+    pub fn get_active_chunks(&self) -> Vec<&Chunk> {
+        let mut chunks: Vec<&Chunk> = Vec::new();
+        for chunk_index in self.active_chunks.iter() {
+            chunks.push(self.chunks.get(chunk_index).unwrap());
+        }
         chunks
     }
 
@@ -238,119 +214,4 @@ impl World {
             *block = block_air(IVec2::new(x, y));
         });
     }
-}
-
-impl Default for KeyboardInput {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl KeyboardInput {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            held: HashSet::new(),
-            released: HashSet::new(),
-            pressed: HashSet::new(),
-        }
-    }
-}
-
-impl Default for MouseInput {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl MouseInput {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            held: HashSet::new(),
-            released: HashSet::new(),
-            pressed: HashSet::new(),
-            pos: Vec2::ZERO,
-        }
-    }
-}
-
-impl Default for Input {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl Input {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            keyboard: KeyboardInput::new(),
-            mouse: MouseInput::new(),
-        }
-    }
-    /// Clear states that should not persist over multiple frames.
-    /// This function should only be called once per tick.
-    pub fn clear_transient(&mut self) {
-        self.keyboard.pressed.clear();
-        self.keyboard.released.clear();
-
-        self.mouse.pressed.clear();
-        self.mouse.released.clear();
-    }
-
-    /// Update input based on a single SDL2 event
-    pub fn update(&mut self, event: &Event) {
-        match event {
-            // Keyboard
-            Event::KeyDown {
-                keycode: Some(key),
-                repeat: false,
-                ..
-            } => {
-                self.keyboard.pressed.insert(*key);
-                self.keyboard.held.insert(*key);
-            }
-            Event::KeyUp {
-                keycode: Some(key),
-                repeat: false,
-                ..
-            } => {
-                self.keyboard.released.insert(*key);
-                self.keyboard.held.remove(key);
-            }
-
-            // Mouse button
-            Event::MouseButtonDown { mouse_btn, .. } => {
-                self.mouse.pressed.insert(*mouse_btn);
-                self.mouse.held.insert(*mouse_btn);
-            }
-            Event::MouseButtonUp { mouse_btn, .. } => {
-                self.mouse.released.insert(*mouse_btn);
-                self.mouse.held.remove(mouse_btn);
-            }
-
-            // Mouse movement
-            Event::MouseMotion { x, y, .. } => {
-                self.mouse.pos = Vec2::new(*x as f32, *y as f32);
-            }
-
-            // idc :shrug:
-            _ => {}
-        }
-    }
-}
-
-impl Game {
-    #[must_use]
-    pub fn new(seed: u32) -> Self {
-        Self {
-            map: World::new(seed),
-            ecs: HecsWorld::new(),
-            input: Input::new(),
-        }
-    }
-    pub fn manage_input(&mut self, event: &Event) {
-        self.input.update(event);
-    }
-    pub fn tick() {}
 }
