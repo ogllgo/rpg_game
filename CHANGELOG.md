@@ -13,8 +13,10 @@ like seriously i forgot to do any DevOps for like a month
 - Added the changelog (this file)
 - Uses derive_builder to autogenerate builders for `Item`s and `Block`s
 
-### V0.0.3: getting in the thick of it (TBD)
+### V0.0.3: getting in the thick of it (2025-08-31)
 and everybody knows
 - Added roadmap
 - Added item drops for: Dirt (block)
 - Added proper block breaking
+- Added inventory rendering
+- Improved block hit system

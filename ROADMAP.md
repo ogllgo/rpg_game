@@ -4,7 +4,6 @@
 - Items and Inventory
     - Inventory UI
     - Dirt drops
-    - Probability-based item drops
 
 ## For V0.1.0
 - Crafting and Multipliers
