@@ -1,7 +1,8 @@
 use crate::{
-    Block, Player,
+    block::Block,
     blocks::{block_air, block_dirt, block_stone},
     items::item_from_name,
+    player::Player,
 };
 use glam::IVec2;
 use noise::{NoiseFn, Perlin};
@@ -92,7 +93,7 @@ impl World {
         }
     }
 
-    pub fn update_around_point(
+    pub fn generate_around_point(
         &mut self,
         x: f32,
         y: f32,
@@ -145,8 +146,7 @@ impl World {
             for chunk_x in (center_chunk_x - half_chunks_x)
                 ..=(center_chunk_x + half_chunks_x)
             {
-                if self.chunks.get(&IVec2::new(chunk_x, chunk_y)).is_some()
-                {
+                if self.chunks.get(&IVec2::new(chunk_x, chunk_y)).is_some() {
                     chunks.push(IVec2::new(chunk_x, chunk_y));
                 }
             }
@@ -154,10 +154,11 @@ impl World {
         self.active_chunks = chunks;
     }
 
-    #[must_use] pub fn get_active_chunks(&self) -> Vec<&Chunk> {
+    #[must_use]
+    pub fn get_active_chunks(&self) -> Vec<&Chunk> {
         let mut chunks: Vec<&Chunk> = Vec::new();
         for chunk_index in &self.active_chunks {
-            chunks.push(self.chunks.get(chunk_index).unwrap());
+            chunks.push(self.chunks.get(chunk_index).unwrap()); // safe because active_chunks is garunteed to be only good chunks
         }
         chunks
     }
@@ -173,22 +174,27 @@ impl World {
 
         chunk.tiles.get(local_x as usize)?.get(local_y as usize)
     }
-    pub fn get_block_mut(&mut self, x: i32, y: i32) -> Option<&mut Block> {
-        let chunk_x = x.div_euclid(Chunk::SIZE_I);
-        let chunk_y = y.div_euclid(Chunk::SIZE_I);
+    pub fn get_block_mut(&mut self, pos: IVec2) -> Option<&mut Block> {
+        let chunk_x = pos.x.div_euclid(Chunk::SIZE_I);
+        let chunk_y = pos.y.div_euclid(Chunk::SIZE_I);
 
         let chunk: &mut Chunk =
             self.chunks.get_mut(&IVec2::new(chunk_x, chunk_y))?;
-        let local_x = x.rem_euclid(Chunk::SIZE_I);
-        let local_y = y.rem_euclid(Chunk::SIZE_I);
+        let local_x = pos.x.rem_euclid(Chunk::SIZE_I);
+        let local_y = pos.y.rem_euclid(Chunk::SIZE_I);
 
         chunk
             .tiles
             .get_mut(local_x as usize)?
             .get_mut(local_y as usize)
     }
-    pub fn hit_block(&mut self, x: i32, y: i32, player: &mut Player) {
-        let block = self.get_block_mut(x, y).unwrap();
+    pub fn hit_block(&mut self, pos: IVec2, player: &mut Player) {
+        let block = self.get_block_mut(pos);
+        if block.is_none() {
+            return;
+        }
+        let block = block.unwrap(); // safe because we already handled the None case
+
         if block.can_be_hit() {
             let mut damage = player.calculate_mining_speed();
             if player.mining_spread < block.required_level {
@@ -197,13 +203,25 @@ impl World {
             block.health -= damage;
             if block.health <= 0.0 {
                 if let Some(item) = block.drop_item {
-                    player.add_item(item_from_name(item, 1));
+                    player.inventory.add_item(item_from_name(item, 1));
                 }
-                self.remove_block(x, y);
+                self.remove_block(pos);
             }
         }
     }
-    pub fn remove_block(&mut self, x: i32, y: i32) {
-        if let Some(block) = self.get_block_mut(x, y) { *block = block_air(IVec2::new(x, y)); }
+
+    pub fn heal_block(&mut self, pos: IVec2, heal_amount: f32) {
+        let block = self.get_block_mut(pos);
+        if let Some(block) = block {
+            block.health += heal_amount;
+            if block.health > block.max_health {
+                block.health = block.max_health;
+            }
+        }
+    }
+    pub fn remove_block(&mut self, pos: IVec2) {
+        if let Some(block) = self.get_block_mut(pos) {
+            *block = block_air(pos);
+        }
     }
 }

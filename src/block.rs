@@ -1,7 +1,9 @@
-use crate::{camera::Camera, item::ItemName};
+use crate::{
+    blocks::BLOCK_COLOR_AIR, camera::Camera, item::ItemName, render::Rect,
+};
 use derive_builder::Builder;
-use glam::IVec2;
-use sdl2::{rect::FRect, render::Canvas, video::Window};
+use glam::{IVec2, Vec2};
+use sdl2::{render::Canvas, video::Window};
 
 pub const BLOCK_SIZE_PIXELS: i32 = 10;
 #[derive(Clone, Debug, PartialEq, Copy, Default)]
@@ -32,10 +34,23 @@ pub struct Block {
     pub max_health: f32,
     pub drop_item: Option<ItemName>,
     pub is_solid: bool,
-    #[builder(private)]
     flags: [Option<BlockFlag>; 6],
-    #[builder(private)]
     flag_count: usize,
+    pub last_hit_tick: u64,
+}
+
+fn color_interp(
+    col1: (u8, u8, u8),
+    col2: (u8, u8, u8),
+    perc: f32,
+) -> (u8, u8, u8) {
+    let p = perc.clamp(0.0, 1.0);
+
+    let r = col1.0 as f32 + (col2.0 as f32 - col1.0 as f32) * p;
+    let g = col1.1 as f32 + (col2.1 as f32 - col1.1 as f32) * p;
+    let b = col1.2 as f32 + (col2.2 as f32 - col1.2 as f32) * p;
+
+    (r.round() as u8, g.round() as u8, b.round() as u8)
 }
 
 impl Block {
@@ -43,15 +58,25 @@ impl Block {
         &self,
         canvas: &mut Canvas<Window>,
         camera: &Camera,
-        scale: f32,
-    ) {
-        let screen_x = (self.pos.x as f32 - camera.pos.x) * scale;
-        let screen_y = (self.pos.y as f32 - camera.pos.y) * scale;
-        // println!("screen pos: ({}, {})", screen_x, screen_y);
-        canvas.set_draw_color(self.color);
-        canvas
-            .fill_frect(FRect::new(screen_x, screen_y, scale, scale))
-            .unwrap();
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let screen_pos = camera.global_to_screen(self.pos.as_vec2());
+        let screen_dims = camera.scale_global_to_screen(Vec2::ONE);
+
+        let health_percent = 1.0
+            - if self.max_health == 0.0 {
+                1.0
+            } else {
+                self.health / self.max_health
+            };
+
+        canvas.set_draw_color(color_interp(
+            self.color,
+            BLOCK_COLOR_AIR,
+            health_percent,
+        ));
+        Rect::new(screen_pos.x, screen_pos.y, screen_dims.x, screen_dims.y)
+            .draw(canvas)?;
+        Ok(())
     }
     #[must_use]
     pub fn can_be_hit(&self) -> bool {
@@ -106,27 +131,5 @@ impl Block {
         if self.flag_count > 0 {
             self.flag_count -= 1;
         }
-    }
-}
-
-impl BlockBuilder {
-    pub fn add_flag(&mut self, flag: BlockFlag) -> &mut Self {
-        if self.flag_count.unwrap_or(0) >= 6 {
-            // already full, do nothing
-            return self;
-        }
-
-        // initialize flags if not already
-        if self.flags.is_none() {
-            self.flags = Some([None; 6]);
-        }
-
-        let mut flags = self.flags.take().unwrap();
-        let count = self.flag_count.unwrap_or(0);
-        flags[count] = Some(flag);
-        self.flag_count = Some(count + 1);
-        self.flags = Some(flags);
-
-        self
     }
 }

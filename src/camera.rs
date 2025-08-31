@@ -15,7 +15,8 @@ pub struct Camera {
 }
 
 impl Camera {
-    #[must_use] pub fn new(
+    #[must_use]
+    pub fn new(
         pos: Vec2,
         viewport_dims: Vec2,
         window_dims: Vec2,
@@ -30,26 +31,42 @@ impl Camera {
     }
 
     /// Convert world/global position -> screen space
-    #[must_use] pub fn global_to_screen(&self, world_pos: Vec2) -> Vec2 {
+    #[must_use]
+    pub fn global_to_screen(&self, world_pos: Vec2) -> Vec2 {
+        // world - self
+        // rotate(-rot)
+        // * scale
+        // + (dims / 2)
         let mut local = world_pos - self.pos;
-        let scale = self.viewport_dims / self.window_dims;
         local = rotate(local, -self.rot);
-        local.x *= scale.x;
-        local.y *= scale.y;
+        local *= self.pixels_per_unit();
         local + self.window_dims * 0.5
     }
 
     /// Convert screen space -> world/global position
-    #[must_use] pub fn screen_to_global(&self, screen_pos: Vec2) -> Vec2 {
-        let mut local = screen_pos - self.window_dims * 0.5;
-        let scale = self.viewport_dims / self.window_dims;
-        local.x /= scale.x;
-        local.y /= scale.y;
+    #[must_use]
+    pub fn screen_to_global(&self, screen_pos: Vec2) -> Vec2 {
+        // - (dims / 2)
+        // / scale
+        // rotate(rot)
+        // + self
+        let mut local = screen_pos - self.window_dims / 2.0;
+        local /= self.pixels_per_unit();
         local = rotate(local, self.rot);
         local + self.pos
     }
 
-    #[must_use] pub fn window_size(&self) -> Vec2 {
+    pub fn scale_global_to_screen(&self, world_pos: Vec2) -> Vec2 {
+        let new = rotate(world_pos * self.pixels_per_unit(), -self.rot);
+        new
+    }
+
+    pub fn pixels_per_unit(&self) -> Vec2 {
+        self.window_dims / self.viewport_dims
+    }
+
+    #[must_use]
+    pub fn window_size(&self) -> Vec2 {
         self.window_dims
     }
 
@@ -57,17 +74,8 @@ impl Camera {
         self.window_dims = new_dims;
     }
 
-    #[must_use] pub fn get_viewport_units(&self) -> Vec2 {
-        self.viewport_dims / (self.window_dims / self.viewport_dims)
-    }
-
-    #[must_use] pub fn get_scale(&self) -> Vec2 {
-        self.window_dims / self.viewport_dims
-    }
-
     pub fn center_around(&mut self, pos: Vec2) {
-        let offset = rotate(self.viewport_dims / 2.0, self.rot);
-        self.pos = pos - offset;
+        self.pos = pos;
     }
 }
 

@@ -1,6 +1,13 @@
 use derive_builder::Builder;
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
+pub enum ItemUsage {
+    #[default]
+    None,
+    Block,
+}
+
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub enum ItemRarity {
     #[default]
     Common,
@@ -9,14 +16,16 @@ pub enum ItemRarity {
 pub enum ItemName {
     #[default]
     Stone,
+    Dirt,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub enum ItemType {
-    Weapon,
-    Tool,
+    // Weapon,
+    // Tool,
+    #[default]
     Material,
-    Equipment,
+    // Equipment,
 }
 
 #[derive(Clone, Debug, Copy, PartialEq)]

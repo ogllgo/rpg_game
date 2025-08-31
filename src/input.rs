@@ -60,8 +60,9 @@ impl MouseInput {
         }
     }
 
-    #[must_use] pub fn get_global_pos(&self) -> Vec2 {
-        self.world_pos
+    #[must_use]
+    pub fn get_global_pos(&self, camera: &Camera) -> Vec2 {
+        camera.screen_to_global(self.pos)
     }
 }
 
@@ -128,6 +129,7 @@ impl Input {
             // idc :shrug:
             _ => {}
         }
+
         self.mouse.world_pos = camera.screen_to_global(self.mouse.pos);
         true
     }
